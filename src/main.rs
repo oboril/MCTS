@@ -1,13 +1,99 @@
 mod tictactoe;
-use tictactoe::TicTacToe;
+//use tictactoe::TicTacToe;
 mod mcts;
-use mcts::Node;
+use mcts::{Node, GeneralGame};
+
+use crate::connect4::Connect4;
+
+mod connect4;
+
+fn play_connect4_against_computer() {
+    fn index_from_input() -> Option<usize> {
+        let mut line = String::new();
+    
+        std::io::stdin().read_line(&mut line).unwrap();
+        
+        line.retain(|c| !c.is_whitespace());
+    
+        let index = line.parse::<usize>();
+        if index.is_err() { return None; }
+        let index = index.unwrap();
+        if index < 1 || index > 6 { return None; }
+
+        return Some(index-1);
+    }
+
+    let mut rng = rand::thread_rng();
+
+    let mut board = Connect4::empty();
+
+    let mut player = 1i8;
+
+    while board.get_score() == 0 && board.get_available().len() > 0 {
+        println!("{}", board);
+
+        // Print evaluation
+        {
+            let mut node = Node::new(board.clone(), player, 0);
+            for _ in 0..10000usize {
+                node.propagate(1, &mut rng);
+            }
+            let mut wins = (node.wins as f32)/(node.visits as f32)*100.;
+            let mut losses = (node.losses as f32)/(node.visits as f32)*100.;
+            if player == 1 {
+                (wins, losses) = (losses, wins);
+            }
+            println!("Human wins: {:0.1}%, Computer wins: {:0.1}%", wins, losses);
+        }
+        
+        // Human
+        if player == 1 {
+            let mut index = None;
+            while index.is_none() {
+                println!("Select where do you want to place the token (1-6):");
+                index = index_from_input();
+            }
+
+            board.update(index.unwrap(), player);
+        }
+        // Computer
+        else if player == -1 {
+            let mut node = Node::new(board.clone(), player, 0);
+            for _ in 0..1000usize {
+                node.propagate(1, &mut rng);
+            }
+
+            let index = node.get_most_visited_child().unwrap().move_index;
+
+            board.update(index, player);
+        }
+
+        player *= -1;
+    }
+
+    println!("{}", board);
+    println!("Game over!");
+}
 
 fn main() {
-    let mut rng = rand::thread_rng();
-    let mut node = Node::new(TicTacToe::from_string(".O.\n.X.\nX..").unwrap(), -1);
 
-    for _ in 0..100000usize {
+    play_connect4_against_computer();
+
+    return;
+    let mut rng = rand::thread_rng();
+
+    let str = "\
+                        X.....\n\
+                        O.....\n\
+                        X..O..\n\
+                        O..X..\n\
+                        XO.XX.\n\
+                        XX.OOO\n\
+                    ";
+
+    let mut node = Node::new(Connect4::from_string(str).unwrap(), 1, 0);
+
+    for _ in 0..1000usize {
         node.propagate(1, &mut rng);
     }
 

@@ -19,12 +19,13 @@ pub struct Node<T:GeneralGame> {
     pub wins: u64,
     pub losses: u64,
     pub children: Vec<Node<T>>,
-    created_children: bool
+    created_children: bool,
+    pub move_index: usize
 }
 
 impl<T:GeneralGame> Node<T> {
-    pub fn new(game : T, player: i8) -> Node<T>{
-        return Node {game, player: player, visits: 0, wins: 0, losses: 0, children: Vec::new(), created_children: false};
+    pub fn new(game : T, player: i8, move_index : usize) -> Node<T>{
+        return Node {game, player: player, visits: 0, wins: 0, losses: 0, children: Vec::new(), created_children: false, move_index: move_index};
     }
 
     pub fn rollout(&self, rng: &mut ThreadRng) -> i8 {
@@ -61,7 +62,7 @@ impl<T:GeneralGame> Node<T> {
         let available = self.game.get_available();
 
         for index in available{
-            let mut child = Node::new(self.game.clone(), -self.player);
+            let mut child = Node::new(self.game.clone(), -self.player, index);
             child.game.update(index, self.player);
             self.children.push(child);
         }
@@ -165,6 +166,20 @@ impl<T:GeneralGame> Node<T> {
 
         return (wins_1, wins_n1);
     }
+
+    pub fn get_most_visited_child(&self) -> Option<&Node<T>> {
+        let mut most_visits = 0;
+        let mut most_visited : Option<&Node<T>> = None;
+
+        for child in self.children.iter() {
+            if child.visits > most_visits {
+                most_visits = child.visits;
+                most_visited = Some(child);
+            }
+        }
+
+        return most_visited;
+    }
 }
 
 
@@ -173,10 +188,10 @@ use super::tictactoe::TicTacToe;
 #[test]
 fn test_node_new(){
     let tictactoe = TicTacToe::from_string("..X\nO..\nXXO").unwrap();
-    let node = Node::new(tictactoe, -1);
+    let node = Node::new(tictactoe, -1, 0);
 
     let game = TicTacToe::from_string("..X\nO..\nXXO").unwrap();
-    assert_eq!(node, Node {game: game, player: -1, visits: 0, wins: 0, losses: 0, children: Vec::<Node<TicTacToe>>::new(), created_children: false})
+    assert_eq!(node, Node {game: game, player: -1, visits: 0, wins: 0, losses: 0, children: Vec::<Node<TicTacToe>>::new(), created_children: false, move_index: 0})
 }
 
 #[test]
@@ -184,7 +199,7 @@ fn test_node_rollout(){
     let mut rng = rand::thread_rng();
 
     let tictactoe = TicTacToe::from_string("XX.\nOOX\nOXO").unwrap();
-    let mut node = Node::new(tictactoe, -1);
+    let mut node = Node::new(tictactoe, -1, 0);
 
     assert_eq!(node.rollout(&mut rng), -1);
 
@@ -192,7 +207,7 @@ fn test_node_rollout(){
     assert_eq!(node.rollout(&mut rng), 1);
 
     let tictactoe = TicTacToe::from_string("...\n...\n...").unwrap();
-    let node = Node::new(tictactoe, -1);
+    let node = Node::new(tictactoe, -1, 0);
     const MAX_ITER:usize = 10000;
     let mut iter = 0usize;
     let (mut player_1, mut player_2, mut draw) = (false, false, false);
@@ -212,7 +227,7 @@ fn test_node_rollout(){
 #[test]
 fn test_node_create_children(){
     let tictactoe = TicTacToe::from_string("..X\nO..\nXXO").unwrap();
-    let mut node = Node::new(tictactoe, -1);
+    let mut node = Node::new(tictactoe, -1, 0);
 
     node.create_children();
     assert_eq!(node.children.len(), 4);
@@ -222,7 +237,7 @@ fn test_node_create_children(){
 #[test]
 fn test_node_score(){
     let tictactoe = TicTacToe::from_string("..X\nO..\nXXO").unwrap();
-    let mut node = Node::new(tictactoe, -1);
+    let mut node = Node::new(tictactoe, -1, 0);
 
     assert_eq!(node.get_score(1), f32::INFINITY);
     node.visits = 1;
@@ -244,7 +259,7 @@ fn test_node_next_maxscore(){
     let mut rng = rand::thread_rng();
 
     let tictactoe = TicTacToe::from_string("X.O\nOXO\nXX.").unwrap();
-    let mut node = Node::new(tictactoe, -1);
+    let mut node = Node::new(tictactoe, -1, 0);
 
     assert_eq!(node.get_child_with_highest_score(&mut rng), None);
 
