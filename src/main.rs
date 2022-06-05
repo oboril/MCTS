@@ -1,11 +1,11 @@
 mod tictactoe;
-use tictactoe::Board;
+use tictactoe::TicTacToe;
 mod mcts;
 use mcts::Node;
 
 fn main() {
     let mut rng = rand::thread_rng();
-    let mut node = Node::new(Board::from_string(".O.\n.X.\nX..").unwrap(), -1);
+    let mut node = Node::new(TicTacToe::from_string(".O.\n.X.\nX..").unwrap(), -1);
 
     for _ in 0..100000usize {
         node.propagate(1, &mut rng);
@@ -23,6 +23,6 @@ fn main() {
             child.visits, (child.wins as f32)/(child.visits as f32)*100f32,
             (child.losses as f32)/(child.visits as f32)*100f32,
             child.get_score(node.visits));
-        println!("{}", child.board);
+        println!("{}", child.game);
     }
 }

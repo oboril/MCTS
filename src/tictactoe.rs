@@ -2,11 +2,11 @@ use std::fmt;
 use super::mcts::GeneralGame;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Board{
+pub struct TicTacToe{
     pub board: [[i8; 3]; 3]
 }
 
-impl Board {
+impl TicTacToe {
     pub fn get_score(&self) -> i8 {
         for target in [-1i8, 1i8]{
             // check rows and columns
@@ -44,8 +44,8 @@ impl Board {
         return res;
     }
 
-    pub fn from_string(val : &str) -> Option<Board> {
-        let mut board = Board {board:[[0;3];3]};
+    pub fn from_string(val : &str) -> Option<TicTacToe> {
+        let mut tictactoe = TicTacToe {board:[[0;3];3]};
 
         for (i,s) in val.chars().enumerate(){
             if (i+1)%4==0 {
@@ -62,12 +62,12 @@ impl Board {
                     };
                     let x = i%4;
                     let y = i/4;
-                    board.board[y][x] = target;
+                    tictactoe.board[y][x] = target;
                 }
             }
         }
 
-        return Some(board)
+        return Some(tictactoe)
     }
 
     pub fn update(&mut self, indeces : (usize, usize), player: i8) {
@@ -75,7 +75,7 @@ impl Board {
     }
 }
 
-impl GeneralGame for Board {
+impl GeneralGame for TicTacToe {
     fn get_score(&self) -> i8 {
         return self.get_score();
     }
@@ -88,7 +88,7 @@ impl GeneralGame for Board {
     }
 }
 
-impl fmt::Display for Board {
+impl fmt::Display for TicTacToe {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for i in 0..3usize{
             for j in 0..3usize{
@@ -101,53 +101,53 @@ impl fmt::Display for Board {
 }
 
 #[test]
-fn test_board_score() {
-    let mut board: Board;
+fn test_tictactoe_score() {
+    let mut tictactoe: TicTacToe;
 
-    board = Board {board: [[0,0,0],[0,0,0],[0,0,0]]};
-    assert_eq!(board.get_score(), 0);
+    tictactoe = TicTacToe {board: [[0,0,0],[0,0,0],[0,0,0]]};
+    assert_eq!(tictactoe.get_score(), 0);
 
-    board = Board {board: [[1,0,0],[1,0,0],[1,0,0]]};
-    assert_eq!(board.get_score(), 1);
+    tictactoe = TicTacToe {board: [[1,0,0],[1,0,0],[1,0,0]]};
+    assert_eq!(tictactoe.get_score(), 1);
 
-    board = Board {board: [[0,-1,0],[0,-1,0],[0,-1,0]]};
-    assert_eq!(board.get_score(), -1);
+    tictactoe = TicTacToe {board: [[0,-1,0],[0,-1,0],[0,-1,0]]};
+    assert_eq!(tictactoe.get_score(), -1);
 
-    board = Board {board: [[-1,0,0],[0,-1,0],[0,0,-1]]};
-    assert_eq!(board.get_score(), -1);
+    tictactoe = TicTacToe {board: [[-1,0,0],[0,-1,0],[0,0,-1]]};
+    assert_eq!(tictactoe.get_score(), -1);
 
-    board = Board {board: [[-1,0,1],[0,1,0],[1,0,-1]]};
-    assert_eq!(board.get_score(), 1);
+    tictactoe = TicTacToe {board: [[-1,0,1],[0,1,0],[1,0,-1]]};
+    assert_eq!(tictactoe.get_score(), 1);
 
-    board = Board {board: [[-1,0,1],[0,0,1],[1,0,1]]};
-    assert_eq!(board.get_score(), 1);
+    tictactoe = TicTacToe {board: [[-1,0,1],[0,0,1],[1,0,1]]};
+    assert_eq!(tictactoe.get_score(), 1);
 }
 
 #[test]
-fn test_board_available() {
-    let mut board: Board;
+fn test_tictactoe_available() {
+    let mut tictactoe: TicTacToe;
 
-    board = Board {board: [[0,0,0],[0,-1,0],[1,0,-1]]};
-    assert_eq!(board.get_available(), [(0,0),(0,1),(0,2),(1,0),(1,2),(2,1)]);
+    tictactoe = TicTacToe {board: [[0,0,0],[0,-1,0],[1,0,-1]]};
+    assert_eq!(tictactoe.get_available(), [(0,0),(0,1),(0,2),(1,0),(1,2),(2,1)]);
 
-    board = Board {board: [[-1,1,0],[-1,-1,-1],[1,1,0]]};
-    assert_eq!(board.get_available(), [(0,2),(2,2)]);
+    tictactoe = TicTacToe {board: [[-1,1,0],[-1,-1,-1],[1,1,0]]};
+    assert_eq!(tictactoe.get_available(), [(0,2),(2,2)]);
 }
 
 #[test]
-fn test_board_fmt(){
-    let board = Board {board: [[1,1,-1],[0,0,-1],[1,0,0]]};
-    let board_str = format!("{}", board);
-    assert_eq!(board_str, "X X O \n. . O \nX . . \n");
+fn test_tictactoe_fmt(){
+    let tictactoe = TicTacToe {board: [[1,1,-1],[0,0,-1],[1,0,0]]};
+    let tictactoe_str = format!("{}", tictactoe);
+    assert_eq!(tictactoe_str, "X X O \n. . O \nX . . \n");
 }
 
 #[test]
-fn test_board_from_string(){
-    let mut board;
+fn test_tictactoe_from_string(){
+    let mut tictactoe;
 
-    board = Board::from_string("XX.\nO.O\n..X\r");
-    assert_eq!(board, Some(Board {board: [[1,1,0],[-1,0,-1],[0,0,1]]}));
+    tictactoe = TicTacToe::from_string("XX.\nO.O\n..X\r");
+    assert_eq!(tictactoe, Some(TicTacToe {board: [[1,1,0],[-1,0,-1],[0,0,1]]}));
 
-    board = Board::from_string("XX.\rO.O\n...X\n");
-    assert_eq!(board, None);
+    tictactoe = TicTacToe::from_string("XX.\rO.O\n...X\n");
+    assert_eq!(tictactoe, None);
 }

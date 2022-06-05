@@ -13,7 +13,7 @@ pub trait GeneralGame : Clone {
 
 #[derive(Debug,PartialEq)]
 pub struct Node<T:GeneralGame> {
-    pub board: T,
+    pub game: T,
     pub player: i8,
     pub visits: u64,
     pub wins: u64,
@@ -23,28 +23,28 @@ pub struct Node<T:GeneralGame> {
 }
 
 impl<T:GeneralGame> Node<T> {
-    pub fn new(board : T, player: i8) -> Node<T>{
-        return Node {board, player: player, visits: 0, wins: 0, losses: 0, children: Vec::new(), created_children: false};
+    pub fn new(game : T, player: i8) -> Node<T>{
+        return Node {game, player: player, visits: 0, wins: 0, losses: 0, children: Vec::new(), created_children: false};
     }
 
     pub fn rollout(&self, rng: &mut ThreadRng) -> i8 {
-        let mut current_board = self.board.clone();
+        let mut current_game = self.game.clone();
         let mut current_player = self.player;
 
         loop {
-            let score = current_board.get_score();
+            let score = current_game.get_score();
             if score != 0 {
                 return score;
             }
 
-            let available = current_board.get_available();
+            let available = current_game.get_available();
 
             if available.len() == 0 {
                 return 0;
             }
 
             let index = *available.choose(rng).unwrap();
-            current_board.update(index, current_player);
+            current_game.update(index, current_player);
             current_player *= -1;
         }
     }
@@ -53,16 +53,16 @@ impl<T:GeneralGame> Node<T> {
         self.created_children = true;
 
         // If someone already won, there is no point in creating children
-        if self.board.get_score() != 0{
+        if self.game.get_score() != 0{
             return;
         }
 
 
-        let available = self.board.get_available();
+        let available = self.game.get_available();
 
         for index in available{
-            let mut child = Node::new(self.board.clone(), -self.player);
-            child.board.update(index, self.player);
+            let mut child = Node::new(self.game.clone(), -self.player);
+            child.game.update(index, self.player);
             self.children.push(child);
         }
     }
@@ -111,7 +111,7 @@ impl<T:GeneralGame> Node<T> {
         self.visits += rollouts;
 
         // if someone has already won, just return the winner
-        let score = self.board.get_score();
+        let score = self.game.get_score();
         if score != 0 {
             if score == 1 {
                 if self.player == -1 { self.wins += rollouts; }
@@ -169,30 +169,30 @@ impl<T:GeneralGame> Node<T> {
 
 
 #[cfg(test)]
-use super::tictactoe::Board;
+use super::tictactoe::TicTacToe;
 #[test]
 fn test_node_new(){
-    let board = Board::from_string("..X\nO..\nXXO").unwrap();
-    let node = Node::new(board, -1);
+    let tictactoe = TicTacToe::from_string("..X\nO..\nXXO").unwrap();
+    let node = Node::new(tictactoe, -1);
 
-    let board = Board::from_string("..X\nO..\nXXO").unwrap();
-    assert_eq!(node, Node {board: board, player: -1, visits: 0, wins: 0, losses: 0, children: Vec::<Node<Board>>::new(), created_children: false})
+    let game = TicTacToe::from_string("..X\nO..\nXXO").unwrap();
+    assert_eq!(node, Node {game: game, player: -1, visits: 0, wins: 0, losses: 0, children: Vec::<Node<TicTacToe>>::new(), created_children: false})
 }
 
 #[test]
 fn test_node_rollout(){
     let mut rng = rand::thread_rng();
 
-    let board = Board::from_string("XX.\nOOX\nOXO").unwrap();
-    let mut node = Node::new(board, -1);
+    let tictactoe = TicTacToe::from_string("XX.\nOOX\nOXO").unwrap();
+    let mut node = Node::new(tictactoe, -1);
 
     assert_eq!(node.rollout(&mut rng), -1);
 
     node.player = 1;
     assert_eq!(node.rollout(&mut rng), 1);
 
-    let board = Board::from_string("...\n...\n...").unwrap();
-    let node = Node::new(board, -1);
+    let tictactoe = TicTacToe::from_string("...\n...\n...").unwrap();
+    let node = Node::new(tictactoe, -1);
     const MAX_ITER:usize = 10000;
     let mut iter = 0usize;
     let (mut player_1, mut player_2, mut draw) = (false, false, false);
@@ -211,18 +211,18 @@ fn test_node_rollout(){
 
 #[test]
 fn test_node_create_children(){
-    let board = Board::from_string("..X\nO..\nXXO").unwrap();
-    let mut node = Node::new(board, -1);
+    let tictactoe = TicTacToe::from_string("..X\nO..\nXXO").unwrap();
+    let mut node = Node::new(tictactoe, -1);
 
     node.create_children();
     assert_eq!(node.children.len(), 4);
-    assert_eq!(node.children[0].board, Board::from_string("O.X\nO..\nXXO").unwrap());
+    assert_eq!(node.children[0].game, TicTacToe::from_string("O.X\nO..\nXXO").unwrap());
 }
 
 #[test]
 fn test_node_score(){
-    let board = Board::from_string("..X\nO..\nXXO").unwrap();
-    let mut node = Node::new(board, -1);
+    let tictactoe = TicTacToe::from_string("..X\nO..\nXXO").unwrap();
+    let mut node = Node::new(tictactoe, -1);
 
     assert_eq!(node.get_score(1), f32::INFINITY);
     node.visits = 1;
@@ -243,8 +243,8 @@ fn test_node_score(){
 fn test_node_next_maxscore(){
     let mut rng = rand::thread_rng();
 
-    let board = Board::from_string("X.O\nOXO\nXX.").unwrap();
-    let mut node = Node::new(board, -1);
+    let tictactoe = TicTacToe::from_string("X.O\nOXO\nXX.").unwrap();
+    let mut node = Node::new(tictactoe, -1);
 
     assert_eq!(node.get_child_with_highest_score(&mut rng), None);
 
