@@ -3,11 +3,22 @@ mod tictactoe;
 mod mcts;
 use mcts::{Node, GeneralGame};
 
-use crate::connect4::Connect4;
-
 mod connect4;
+use connect4::Connect4;
 
 fn play_connect4_against_computer() {
+    let mut line = String::new();
+    println!("Enter bot accuracy: ");
+    std::io::stdin().read_line(&mut line).unwrap();
+    line.retain(|c| !c.is_whitespace());
+    let max_bot_rollouts = line.parse::<usize>().unwrap();
+    line = String::new();
+    println!("Enter eval accuracy: ");
+    std::io::stdin().read_line(&mut line).unwrap();
+    line.retain(|c| !c.is_whitespace());
+    let max_eval_rollouts = line.parse::<usize>().unwrap();
+    println!("Settings: bot:{} eval:{}", max_bot_rollouts, max_eval_rollouts);
+
     fn index_from_input() -> Option<usize> {
         let mut line = String::new();
     
@@ -24,6 +35,7 @@ fn play_connect4_against_computer() {
     }
 
     let mut rng = rand::thread_rng();
+    
 
     let mut board = Connect4::empty();
 
@@ -35,7 +47,7 @@ fn play_connect4_against_computer() {
         // Print evaluation
         {
             let mut node = Node::new(board.clone(), player, 0);
-            for _ in 0..10000usize {
+            for _ in 0..max_eval_rollouts {
                 node.propagate(1, &mut rng);
             }
             let mut wins = (node.wins as f32)/(node.visits as f32)*100.;
@@ -48,8 +60,9 @@ fn play_connect4_against_computer() {
         
         // Human
         if player == 1 {
-            let mut index = None;
-            while index.is_none() {
+            let mut index : Option<usize> = None;
+            let available = board.get_available();
+            while index.is_none() || !available.contains(&index.unwrap()){
                 println!("Select where do you want to place the token (1-6):");
                 index = index_from_input();
             }
@@ -59,7 +72,7 @@ fn play_connect4_against_computer() {
         // Computer
         else if player == -1 {
             let mut node = Node::new(board.clone(), player, 0);
-            for _ in 0..1000usize {
+            for _ in 0..max_bot_rollouts {
                 node.propagate(1, &mut rng);
             }
 
