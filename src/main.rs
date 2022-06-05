@@ -5,16 +5,24 @@ use mcts::Node;
 
 fn main() {
     let mut rng = rand::thread_rng();
-    let mut node = Node::new(Board::from_string("...\n.XO\n...").unwrap(), 1);
+    let mut node = Node::new(Board::from_string(".O.\n.X.\nX..").unwrap(), -1);
 
-    for _ in 0..1000usize {
+    for _ in 0..100000usize {
         node.propagate(1, &mut rng);
     }
 
-    println!("Root node, visits: {}, losses: {}, score: {}", node.visits, node.wins, node.get_score(node.visits));
+    println!("Root node, visits: {}, wins/losses: {:0.1}%/{:0.1}%, score: {:0.3}",
+        node.visits,
+        (node.losses as f32)/(node.visits as f32)*100f32,
+        (node.wins as f32)/(node.visits as f32)*100f32,
+        node.get_score(node.visits));
+
     node.children.sort_by(|child1, child2| child1.visits.cmp(&child2.visits).reverse());
     for child in node.children.iter(){
-        println!("Visits: {}, wins: {:0.1}%, score: {:0.3}", child.visits, (child.wins as f32)/(child.visits as f32)*100f32, child.get_score(node.visits));
+        println!("Visits: {}, wins/losses: {:0.1}%/{:0.1}%, score: {:0.3}",
+            child.visits, (child.wins as f32)/(child.visits as f32)*100f32,
+            (child.losses as f32)/(child.visits as f32)*100f32,
+            child.get_score(node.visits));
         println!("{}", child.board);
     }
 }

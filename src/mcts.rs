@@ -17,13 +17,14 @@ pub struct Node<T:GeneralGame> {
     pub player: i8,
     pub visits: u64,
     pub wins: u64,
+    pub losses: u64,
     pub children: Vec<Node<T>>,
     created_children: bool
 }
 
 impl<T:GeneralGame> Node<T> {
     pub fn new(board : T, player: i8) -> Node<T>{
-        return Node {board, player: player, visits: 0, wins: 0, children: Vec::new(), created_children: false};
+        return Node {board, player: player, visits: 0, wins: 0, losses: 0, children: Vec::new(), created_children: false};
     }
 
     pub fn rollout(&self, rng: &mut ThreadRng) -> i8 {
@@ -67,13 +68,13 @@ impl<T:GeneralGame> Node<T> {
     }
 
     pub fn get_score(&self, parent_visits: u64) -> f32 {
-        const UPPER_BOUND_CONSTANT : f32 = 1.47;
+        const UPPER_BOUND_CONSTANT : f32 = 1.4142*2.;
 
         if self.visits == 0 {
             return f32::INFINITY;
         }
 
-        let fwins = self.wins as f32;
+        let fwins = (self.wins as f32)  - (self.losses as f32);
         let fvisits = self.visits as f32;
         let fparent_visits = parent_visits as f32;
 
@@ -104,6 +105,7 @@ impl<T:GeneralGame> Node<T> {
         return Some(max_index);
     }
 
+    // this is not tested, make sure to test this manually!
     pub fn propagate(&mut self, rollouts: u64, rng: &mut ThreadRng) -> (u64, u64){
         // returns (visits, player1 wins, player-1 wins)
         self.visits += rollouts;
@@ -113,10 +115,12 @@ impl<T:GeneralGame> Node<T> {
         if score != 0 {
             if score == 1 {
                 if self.player == -1 { self.wins += rollouts; }
+                else { self.losses += rollouts; }
                 return (rollouts, 0);
             }
             else if score == -1 {
                 if self.player == 1 { self.wins += rollouts; }
+                else { self.losses += rollouts; }
                 return (0, rollouts)
             }
             else {
@@ -152,9 +156,11 @@ impl<T:GeneralGame> Node<T> {
         // update self
         if self.player == -1 {
             self.wins += wins_1;
+            self.losses += wins_n1;
         }
         else if self.player == 1 {
             self.wins += wins_n1;
+            self.losses += wins_1;
         }
 
         return (wins_1, wins_n1);
@@ -170,7 +176,7 @@ fn test_node_new(){
     let node = Node::new(board, -1);
 
     let board = Board::from_string("..X\nO..\nXXO").unwrap();
-    assert_eq!(node, Node {board: board, player: -1, visits: 0, wins: 0, children: Vec::<Node<Board>>::new(), created_children: false})
+    assert_eq!(node, Node {board: board, player: -1, visits: 0, wins: 0, losses: 0, children: Vec::<Node<Board>>::new(), created_children: false})
 }
 
 #[test]
@@ -225,7 +231,12 @@ fn test_node_score(){
 
     node.visits = 2;
     node.wins = 1;
-    assert!((node.get_score(2) - 1.3654).abs() < 0.001);
+    assert!((node.get_score(2) - 2.1651).abs() < 0.0001);
+
+    node.visits = 5;
+    node.wins = 1;
+    node.losses = 2;
+    assert!((node.get_score(10) - 1.7194).abs() < 0.0001);
 }
 
 #[test]
@@ -252,17 +263,20 @@ fn test_node_next_maxscore(){
     }
 
     node.children[0].wins = 0;
+    node.children[0].losses = 1;
     node.children[0].visits = 1;
     node.children[1].wins = 1;
     node.children[1].visits = 2;
     node.visits=3;
 
-    assert!((node.children[0].get_score(3) - 1.541).abs() < 0.001);
-    assert!((node.children[1].get_score(3) - 1.589).abs() < 0.001);
+    assert!((node.children[0].get_score(3) - 1.9646).abs() < 0.0001);
+    assert!((node.children[1].get_score(3) - 2.5963).abs() < 0.0001);
 
     assert_eq!(node.get_child_with_highest_score(&mut rng), Some(1));
 
+    
     node.children[1].wins = 10;
+    node.children[1].losses = 2;
     node.children[1].visits = 20;
     node.visits = 21;
 
