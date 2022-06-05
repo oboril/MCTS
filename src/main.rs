@@ -1,5 +1,5 @@
-mod board;
-use board::Board;
+mod tictactoe;
+use tictactoe::Board;
 mod mcts;
 use mcts::Node;
 

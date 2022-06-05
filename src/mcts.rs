@@ -163,7 +163,7 @@ impl<T:GeneralGame> Node<T> {
 
 
 #[cfg(test)]
-use super::board::Board;
+use super::tictactoe::Board;
 #[test]
 fn test_node_new(){
     let board = Board::from_string("..X\nO..\nXXO").unwrap();
