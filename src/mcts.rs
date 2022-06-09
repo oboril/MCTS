@@ -11,7 +11,7 @@ pub trait GeneralGame : Clone {
     //fn get_available(&self) -> (Vec<usize>, Vec<f32>);
 }
 
-#[derive(Debug,PartialEq)]
+#[derive(Debug,PartialEq, Clone)]
 pub struct Node<T:GeneralGame> {
     pub game: T,
     pub player: i8,
@@ -179,6 +179,13 @@ impl<T:GeneralGame> Node<T> {
         }
 
         return most_visited;
+    }
+
+    pub fn predict(&mut self, iters: usize, rollouts: u64) {
+        let mut rng = rand::thread_rng();
+        for _ in 0..iters {
+            self.propagate(rollouts, &mut rng);
+        }
     }
 }
 

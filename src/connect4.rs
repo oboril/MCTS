@@ -4,7 +4,7 @@ use super::mcts::GeneralGame;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Connect4{
-    board: [[i8;6];6]
+    pub board: [[i8;6];6]
 }
 
 impl Connect4 {
