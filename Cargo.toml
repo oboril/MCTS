@@ -11,3 +11,4 @@ overflow-checks = false
 
 [dependencies]
 rand="0.8.5"
+neural_nets={ path = "./external_crates/neural_nets" }
